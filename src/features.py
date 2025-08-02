@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn.base import TransformerMixin, BaseEstimator
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
 
 class TenureBucket(BaseEstimator, TransformerMixin):
     """
@@ -28,3 +30,42 @@ class TenureBucket(BaseEstimator, TransformerMixin):
         )
         # return the transformed DataFrame
         return X
+
+def create_features(df: pd.DataFrame):
+    """
+    Take a cleaned DataFrame (with numeric TotalCharges and binary Churn),
+    apply tenure bucketing, one-hot encode categoricals,
+    and return (X, y) for modeling.
+    """
+    # pull out the target
+    y = df["Churn"].copy()
+    X = df.drop(columns=["customerID", "Churn"])
+    
+    # tenure → bucket
+    X = TenureBucket().fit_transform(X)
+    
+    # pick feature lists
+    #    (adjust these to match what was used at training time)
+    cat_cols = [
+        "gender", "Partner", "Dependents",
+        "PhoneService", "MultipleLines", "InternetService",
+        "OnlineSecurity", "OnlineBackup", "DeviceProtection",
+        "TechSupport", "StreamingTV", "StreamingMovies",
+        "Contract", "PaperlessBilling", "PaymentMethod",
+        "TenureBucket"
+    ]
+    
+    # build a ColumnTransformer
+    preproc = ColumnTransformer([
+        ("onehot",
+         OneHotEncoder(sparse_output=False, handle_unknown="ignore"),
+         cat_cols),
+    ], remainder="passthrough")
+    
+    # fit & transform
+    X_trans = preproc.fit_transform(X)
+
+    # wrap back into a DataFrame
+    feature_names = preproc.get_feature_names_out()
+    X_final = pd.DataFrame(X_trans, columns=feature_names, index=X.index)
+    return X_final, y

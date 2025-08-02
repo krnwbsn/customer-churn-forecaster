@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field
 import joblib
 import pandas as pd
 
+from src.inference import predict_single
+
 # load saved model pipeline and tenure bucket transformer
 artifacts = joblib.load('outputs/churn_model_artifacts.pkl')
 pipeline = artifacts['pipeline']
@@ -41,23 +43,4 @@ def predict(customer: Customer):
     and return the probability plus a simple conclusion
     """
     # convert the pydantic model to a DataFrame
-    df = pd.DataFrame([customer.dict()])
-
-    # apply the tenure bucket transformer
-    X = tenure_bucket.transform(df)
-
-    # predict probability of churn (index 1 is P(churn=Yes))
-    proba = pipeline.predict_proba(X)[:, 1][0]
-    proba_rounded = round(float(proba), 3)
-
-    # determine conclusion based on a 0.5 threshold
-    if proba_rounded >= 0.5:
-        conclusion = "Customer is likely to churn"
-    else:
-        conclusion = "Customer is unlikely to churn"
-
-    # return both probability and conclusion
-    return {
-        "churn_probability": proba_rounded,
-        "conclusion": conclusion
-    }
+    return predict_single(customer.dict())

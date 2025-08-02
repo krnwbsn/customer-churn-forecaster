@@ -70,7 +70,7 @@ customer-churn-forecaster/
 ## Usage
 
 1. **Run EDA, Modeling & Inference**
-All steps—from data loading through batch inference—are orchestrated in `src/main.py`. To execute end-to-end:
+All steps from data loading through batch inference are orchestrated in `src/main.py`. To execute end-to-end:
   ```bash
   python -m src.main
   ```
